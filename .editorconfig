@@ -1,0 +1,44 @@
+# 顶层标记，表示这是根配置文件（阻止 VS 向上查找其他 .editorconfig）
+root = true
+
+# 所有文件的通用设置
+[*]
+# 编码：统一使用 UTF-8 无 BOM（推荐 .NET Core / Unity 标准）
+charset = utf-8
+# 换行符：Windows 风格（CRLF），也可设为 lf（Unix）或 crlf（Windows）
+end_of_line = crlf
+# 文件末尾保留一个空行
+insert_final_newline = true
+# 去除行尾多余空格
+trim_trailing_whitespace = true
+
+# C# 文件专用规则
+[*.cs]
+# 缩进使用空格（非 Tab）
+indent_style = space
+# 缩进宽度为 4 个空格
+indent_size = 4
+# 每行最大长度（可选，VS 支持提示）
+max_line_length = 120
+
+# 其他常见文件类型
+[*.json]
+indent_style = space
+indent_size = 2
+charset = utf-8
+
+[*.xml]
+indent_style = space
+indent_size = 2
+charset = utf-8
+
+[*.shader]
+charset = utf-8
+
+[*.txt]
+charset = utf-8
+
+# Markdown 文件
+[*.md]
+trim_trailing_whitespace = false  # Markdown 中换行可能依赖尾部空格
+charset = utf-8
