@@ -99,3 +99,7 @@ mono_crash.*
 *.swp
 *~
 *.orig
+
+# 10) 可忽略的.meta文件（按需启用）
+*.md.meta
+*.pdf.meta

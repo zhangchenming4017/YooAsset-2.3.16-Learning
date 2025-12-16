@@ -32,8 +32,8 @@ namespace YooAsset.Editor
                     new TaskVerifyBuildResult_SBP(),        // 对照计划校验构建结果。对比BuildBundleInfo与IBundleBuildResults.BundleInfos
                     new TaskEncryption_SBP(),               // （可选）加密。若启用加密，TaskEncryption_SBP 读中间目录的原始 .bundle → 生成 .encrypt → 标记 bundleInfo.Encrypted = true 并保存到 EncryptedFilePath
                     new TaskUpdateBundleInfo_SBP(),         // 决定“发布[源文件]（指“要被发布/拷贝”的AB文件源头”）、计算 FileHash/CRC/Size和“最终文件名/路。基于“加密与否”决定源文件路径，源文件：若加密，取 .encrypt；否则取原始 .bundle，最终文件名：根据 FileNameStyle（哈希名/原名/原名_哈希），用“源文件内容的 MD5”参与命名，最终路径：拼到“版本目录” {BuildOutputRoot}/{BuildTarget}/{PackageName}/{PackageVersion}/{最终文件名}，同时计算：最终入清单的 FileHash/CRC/Size（都来自“源文件”字节）
-                    new TaskCreateManifest_SBP(),           // 生成清单。清单写入：每个包的 FileName（与上一步生成的目标名一致）、FileHash、CRC、FileSize、Encrypted、依赖/标签等
-                    new TaskCreateReport_SBP(),             // 生成构建报告。
+                    new TaskCreateManifest_SBP(),           // 生成清单产物（.version/.hash/.bytes）到最终的版本目录。清单写入：每个包的 FileName（与上一步生成的目标名一致）、FileHash、CRC、FileSize、Encrypted、依赖/标签等
+                    new TaskCreateReport_SBP(),             // 生成构建报告（.report）到最终的版本目录。
                     new TaskCreatePackage_SBP(),            // 拷贝源文件到版本目录（发布落地）。把每个 PackageSourceFilePath 复制到 PackageDestFilePath；并复制 buildlogtep.json 和（可选）link.xml 到版本目录
                     new TaskCopyBuildinFiles_SBP(),         // （可选）首包拷贝。按策略把清单和部分/全部 AB 再拷到 StreamingAssets/yoo/PackageName
                     new TaskCreateCatalog_SBP()             // （可选）目录编目。生成内置资源目录（供运行时使用）

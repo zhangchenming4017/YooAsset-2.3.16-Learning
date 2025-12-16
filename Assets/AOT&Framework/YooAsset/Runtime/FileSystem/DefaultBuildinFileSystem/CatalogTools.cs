@@ -14,7 +14,7 @@ namespace YooAsset
         /// </summary>
         public static bool CreateCatalogFile(IManifestRestoreServices services, string packageName, string packageDirectory)
         {
-            // 获取资源清单版本
+            // 获取资源清单版本.version
             string packageVersion;
             {
                 string versionFileName = YooAssetSettingsData.GetPackageVersionFileName(packageName);
@@ -28,11 +28,11 @@ namespace YooAsset
                 packageVersion = FileUtility.ReadAllText(versionFilePath);
             }
 
-            // 加载资源清单文件
+            // 加载资源清单文件.bytes
             PackageManifest packageManifest;
             {
                 string manifestFileName = YooAssetSettingsData.GetManifestBinaryFileName(packageName, packageVersion);
-                string manifestFilePath = $"{packageDirectory}/{manifestFileName}";
+                string manifestFilePath = $"{packageDirectory}/{manifestFileName}";     // StreamingAssets/yoo/包名/清单文件（.bytes）完整名称
                 if (File.Exists(manifestFilePath) == false)
                 {
                     Debug.LogError($"Can not found package manifest file : {manifestFilePath}");

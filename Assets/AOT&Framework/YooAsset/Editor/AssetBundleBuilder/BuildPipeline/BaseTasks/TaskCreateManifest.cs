@@ -47,10 +47,10 @@ namespace YooAsset.Editor
             manifest.AssetList = CreatePackageAssetList(buildMapContext);       //! 创建资源对象PackageAsset列表，获取资源包里的主资源对象
             manifest.BundleList = CreatePackageBundleList(buildMapContext);     //! 创建资源包列表PackageBundle列表
 
-            // 1. 处理资源清单的资源对象：缓存[资源包]索引、记录[资源对象]所属的[资源包]索引、记录[资源对象]依赖的资源包索引集合
+            // 1. 处理资源清单的资源对象：根据[资源包名]缓存[资源包]索引、记录[资源对象]所属的[资源包]索引PackageAsset.BundleID、记录[资源对象]依赖的[资源包]ID索引集合PackageAsset.DependBundleIDs
             ProcessPacakgeAsset(manifest);
 
-            // 2. 处理资源包的依赖列表：获取[资源包]的依赖集合
+            // 2. 处理资源包的依赖列表：填充[资源包]的依赖集合PackageBundle.DependBundleIDs
             if (processBundleDepends)
                 ProcessBundleDepends(context, manifest);
 
@@ -97,6 +97,24 @@ namespace YooAsset.Editor
                 BuildLogger.Log($"Create package manifest version file: {filePath}");
             }
 
+            //? 不同格式的清单文件有什么不同？
+            //!? .byte（二进制清单）
+            //!? 内容：PackageManifest 完整数据（二进制）。
+            //!? 写入时可经过 IManifestProcessServices 处理（压缩/加密）。
+            //!? 运行时真正加载的是它（DeserializeFromBinary(byte[])）。
+            //!? .json（可读清单）
+            //!? 内容与 .bytes 一致，但不做处理（明文 JSON）。
+            //!? 只用于调试、分析，不是运行时的主数据源。
+            //!? .hash
+            //!? 内容：对 .bytes 做 CRC32 的字符串。
+            //!? 用途：记录当前使用的版本号，配合首包 / 远程版本查询流程。
+            //!? .version
+            //!? 内容：当前构建的 PackageVersion。
+            //!? 用途：记录当前使用的版本号，配合首包 / 远程版本查询流程。
+            //!? .report（在 TaskCreateReport_SBP 生成）
+            //!? 内容：构建统计/明细，主要给人看（编辑器分析）。
+            //!? 
+
             // 填充上下文
             {
                 ManifestContext manifestContext = new ManifestContext();
@@ -134,7 +152,7 @@ namespace YooAsset.Editor
         protected abstract string[] GetBundleDepends(BuildContext context, string bundleName);
 
         /// <summary>
-        /// 创建资源对象PackageAsset列表，获取资源包里的主资源对象
+        /// 创建资源对象PackageAsset列表，获取资源包里的主资源对象（包含Address、AssetPath、AssetGUID、AssetTags、BuildAssetInfo）
         /// </summary>
         private List<PackageAsset> CreatePackageAssetList(BuildMapContext buildMapContext)
         {
@@ -178,7 +196,7 @@ namespace YooAsset.Editor
         }
 
         /// <summary>
-        /// 处理资源清单的资源对象列表，缓存资源包索引、记录资源对象所属的资源包索引、
+        /// 处理资源清单的[资源对象]列表，根据[资源包名]缓存[资源包]索引、记录[资源对象]所属的[资源包]索引、记录[资源对象]依赖的[资源包]索引集合
         /// </summary>
         private void ProcessPacakgeAsset(PackageManifest manifest)
         {
@@ -196,7 +214,7 @@ namespace YooAsset.Editor
                 packageAsset.BundleID = GetCachedBundleIndexID(assetInfo.BundleName);
             }
 
-            // 记录资源对象依赖的资源包ID集合
+            // 通过BuildAssetInfo.AllDependAssetInfos记录[资源对象]依赖的[资源包]ID集合
             // 注意：依赖关系非引擎构建结果里查询！
             foreach (var packageAsset in manifest.AssetList)
             {
@@ -213,9 +231,12 @@ namespace YooAsset.Editor
             // 查询引擎生成的资源包依赖关系，然后记录到清单
             foreach (var packageBundle in manifest.BundleList)
             {
+                // 获取当前[资源包]在缓存中的ID索引
                 int mainBundleID = GetCachedBundleIndexID(packageBundle.BundleName);
+                // 获取[资源包]的[依赖资源包]名称集合，SBP通过TaskBuildin_SBP的构建结果IBundleBuildResults的BundleInfos来获取
                 string[] dependNames = GetBundleDepends(context, packageBundle.BundleName);
                 List<int> dependIDs = new List<int>(dependNames.Length);
+                // 通过[资源包名]和缓存查询依赖[资源包]的索引ID
                 foreach (var dependName in dependNames)
                 {
                     int dependBundleID = GetCachedBundleIndexID(dependName);
@@ -234,19 +255,22 @@ namespace YooAsset.Editor
         /// </summary>
         private void ProcessBundleTags(PackageManifest manifest)
         {
+            // 清空所有[资源包]的标签信息
             foreach (var packageBundle in manifest.BundleList)
             {
                 packageBundle.Tags = Array.Empty<string>();
             }
 
-            // 将主资源的标签信息传染给其依赖的资源包集合
+            // 缓存[资源包]的标签信息
             foreach (var packageAsset in manifest.AssetList)
             {
                 var assetTags = packageAsset.AssetTags;
                 int bundleID = packageAsset.BundleID;
+                // 缓存主资源包的标签
                 CacheBundleTags(bundleID, assetTags);
                 if (packageAsset.DependBundleIDs != null)
                 {
+                    // 缓存依赖资源包的标签
                     foreach (var dependBundleID in packageAsset.DependBundleIDs)
                     {
                         CacheBundleTags(dependBundleID, assetTags);
@@ -254,7 +278,7 @@ namespace YooAsset.Editor
                 }
             }
 
-            // 将缓存的资源标签赋值给资源包
+            // 将缓存的资源标签赋值给[资源包]
             for (int index = 0; index < manifest.BundleList.Count; index++)
             {
                 var packageBundle = manifest.BundleList[index];
@@ -387,9 +411,16 @@ namespace YooAsset.Editor
             }
             builtinPackageBundle.Tags = tempTags.ToArray();
         }
+
+        /// <summary>
+        /// 通过BuildAssetInfo的AllDependAssetInfos获取[资源对象]依赖的[资源包]ID数组集合
+        /// </summary>
+        /// <param name="mainAssetInfo"></param>
+        /// <returns></returns>
         private int[] GetAssetDependBundleIDs(BuildAssetInfo mainAssetInfo)
         {
             HashSet<int> result = new HashSet<int>();
+            // 获取当前资源所在资源包的ID
             int mainBundleID = GetCachedBundleIndexID(mainAssetInfo.BundleName);
             foreach (var dependAssetInfo in mainAssetInfo.AllDependAssetInfos)
             {

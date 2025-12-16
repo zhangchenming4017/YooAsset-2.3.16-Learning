@@ -14,9 +14,13 @@ namespace YooAsset.Editor
         internal void CopyBuildinFilesToStreaming(BuildParametersContext buildParametersContext, PackageManifest manifest)
         {
             EBuildinFileCopyOption copyOption = buildParametersContext.Parameters.BuildinFileCopyOption;
+            // 获取包输出目录（最终版本目录）
             string packageOutputDirectory = buildParametersContext.GetPackageOutputDirectory();
+            // 获取内置文件的目录StreamingAssets/yoo/包名
             string buildinRootDirectory = buildParametersContext.GetBuildinRootDirectory();
+            // 获取包名
             string buildPackageName = buildParametersContext.Parameters.PackageName;
+            // 获取包版本
             string buildPackageVersion = buildParametersContext.Parameters.PackageVersion;
 
             // 清空内置文件的目录

@@ -18,8 +18,8 @@ namespace YooAsset.Editor
         private void CreatePackagePatch(BuildParametersContext buildParametersContext, BuildMapContext buildMapContext)
         {
             var scriptableBuildParameters = buildParametersContext.Parameters as ScriptableBuildParameters;
-            string pipelineOutputDirectory = buildParametersContext.GetPipelineOutputDirectory();
-            string packageOutputDirectory = buildParametersContext.GetPackageOutputDirectory();
+            string pipelineOutputDirectory = buildParametersContext.GetPipelineOutputDirectory();       // 中间产物目录
+            string packageOutputDirectory = buildParametersContext.GetPackageOutputDirectory();         // 最终的版本目录
             BuildLogger.Log($"Start making patch package: {packageOutputDirectory}");
 
             // 拷贝构建日志
